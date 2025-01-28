@@ -1,0 +1,145 @@
+-- Anti Afk
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Nadir3709/Anti-Afk/main/Script"))()
+
+-- UI
+local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+
+-- Window
+local Window = WindUI:CreateWindow({
+    Title = "Funky Friday", -- UI Title
+    Icon = "door-open", -- Url or rbxassetid or lucide
+    Author = "Nadir & Wally", -- Author & Creator
+    Size = UDim2.fromOffset(100, 100), -- UI Size
+    Transparent = false, -- UI Transparency
+    Theme = "Dark", -- UI Theme
+    SideBarWidth = 200, -- UI Sidebar Width (number)
+})
+
+-- Main Tab
+local MainTab = Window:Tab({
+    Title = "Main",
+    Icon = "house",
+}) Window:SelectTab(1)
+
+-- Credits Tab
+local CreditsTab = Window:Tab({
+    Title = "Credits",
+    Icon = "user-pen",
+})
+
+-- Credits Section
+local Button = CreditsTab:Button({
+    Title = "Discord Server",
+    Desc = "Link invite Nadir Hub",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Nadir3709/Credits/main/Discord"))()
+    end,
+})
+
+local Paragraph = CreditsTab:Paragraph({
+    Title = "Author",
+    Desc = "Nadir & Wally",
+})
+
+-- Auto Player Section
+MainTab:Section({ 
+    Title = "Main",
+    TextXAlignment = "Left"
+})
+
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Side
+local keymap, key1, key2, key3, key4, key5, key6, key7, key8, key9
+
+local Toggle = MainTab:Toggle({
+    Title = "Auto Player",
+    Callback = function(AutoPlay)
+        _G.Auto = AutoPlay
+
+        if _G.Auto then
+            while _G.Auto do
+                pcall(function()
+                    local player = game:GetService("Players").LocalPlayer
+                    local ap = player.PlayerGui.GameUI.Screen.Arrows[Side].Arrows
+
+                    local function getColumn(index)
+                        return ap["Arrow" .. index].InnerFrame.Column:GetChildren()
+                    end
+
+                    local function autoplay(children, keyCode)
+                        for _, child in pairs(children) do
+                            if child.Position.Y.Scale < (0 + 1e-9) and (child.Name == "Frame" or child.Name == "Note") then
+                                coroutine.wrap(function()
+                                    VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+                                    while child.Parent do
+                                        task.wait()
+                                    end
+                                    VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+                                end)()
+                                break
+                            end
+                        end
+                    end
+
+                    for i = 0, 8 do
+                        local keyCode = _G["key" .. i + 1]
+                        if keyCode then
+                            autoplay(getColumn(i), keyCode)
+                        end
+                    end
+                end)
+                task.wait()
+            end
+        end
+    end
+})
+
+_G.Delay = 0
+
+function CheckSide()
+    pcall(function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+
+        local minDistTo11, minDistTo21 = math.huge, math.huge
+
+        for _, stage in pairs(workspace.Map.Stages:GetChildren()) do
+            if stage:FindFirstChild("Pads") then
+                local pads = stage.Pads
+                local part11, part21 = pads:FindFirstChild("11"), pads:FindFirstChild("21")
+
+                if part11 and (rootPart.Position - part11.Position).magnitude <= 5 then
+                    local distTo11 = (rootPart.Position - part11.Position).magnitude
+                    if distTo11 < minDistTo11 then
+                        minDistTo11 = distTo11
+                    end
+                end
+
+                if part21 and (rootPart.Position - part21.Position).magnitude <= 5 then
+                    local distTo21 = (rootPart.Position - part21.Position).magnitude
+                    if distTo21 < minDistTo21 then
+                        minDistTo21 = distTo21
+                    end
+                end
+            end
+        end
+
+        Side = (minDistTo11 < minDistTo21) and "Left" or "Right"
+    end)
+end
+
+while true do
+    local player = game:GetService("Players").LocalPlayer
+    if player.PlayerGui.GameUI.Windows.SongSelector.Visible == true then
+        CheckSide()
+    end
+
+    pcall(function()
+        local arrows = player.PlayerGui.GameUI.Screen.Arrows[Side].Arrows
+        for i = 0, 8 do
+            _G["key" .. i + 1] = Enum.KeyCode[arrows["Arrow" .. i].InnerFrame[tostring(i)].Keybind.Text]
+        end
+    end)
+    task.wait()
+end
